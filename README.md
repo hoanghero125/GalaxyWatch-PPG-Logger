@@ -214,6 +214,138 @@ PPG_Dataset/
 
 ---
 
+## 3. Data Collection Workflow
+
+A complete recording session involves the PC server, OBS, and the Galaxy Watch working together. The server API can be called via the interactive Swagger UI at `http://localhost:8000/docs`, `curl`, or any HTTP client.
+
+### Step 1: Start the PC Side
+
+1. Open **OBS Studio** and make sure your video source is configured (e.g. webcam)
+2. Start the server:
+   ```bash
+   cd server
+   python main.py
+   ```
+3. Verify everything is connected:
+   ```bash
+   curl http://localhost:8000/health
+   ```
+   You should see `"obs_connected": true`.
+
+### Step 2: Create a Session
+
+Create a session with a subject ID and session type (e.g. `baseline`, `exercise`, `rest`):
+
+```bash
+curl -X POST http://localhost:8000/api/session/create \
+  -d "subject_id=S_001" \
+  -d "session_type=baseline"
+```
+
+The response contains the `session_id` — save it for the next steps. Example: `S_001_baseline_1740000000000`
+
+### Step 3: Start Recording
+
+Start OBS video recording and record the start timestamp:
+
+```bash
+curl -X POST http://localhost:8000/api/session/S_001_baseline_1740000000000/start \
+  -d "phone_timestamp=$(date +%s000)"
+```
+
+OBS will begin recording. The video start time is saved as a sync marker.
+
+### Step 4: Collect PPG Data on the Watch
+
+1. Open **Galaxy PPG Logger** on the watch
+2. Tap **Play** to begin PPG data collection
+3. The watch collects PPG signals (green, red, IR) and stores them locally
+
+> Optionally, record the watch start time as a sync marker:
+> ```bash
+> curl -X POST http://localhost:8000/api/session/S_001_baseline_1740000000000/sync-marker \
+>   -d "marker_name=watch_start" \
+>   -d "timestamp=$(date +%s000)"
+> ```
+
+### Step 5: Stop Collection
+
+1. Tap **Pause** on the watch to stop PPG collection
+2. Stop the server session (this stops OBS recording and saves sync markers):
+   ```bash
+   curl -X POST http://localhost:8000/api/session/S_001_baseline_1740000000000/stop \
+     -d "phone_timestamp=$(date +%s000)"
+   ```
+
+### Step 6: Extract PPG Data from the Watch
+
+PPG data is stored in a Room database on the watch. Pull it via ADB and export to CSV:
+
+```bash
+# Pull the database from the watch
+adb pull /data/data/kaist.iclab.galaxyppglogger/databases/RoomDB ./RoomDB
+
+# Export to CSV using sqlite3
+sqlite3 -header -csv ./RoomDB "SELECT * FROM ppg;" > ppg.csv
+```
+
+> If `adb pull` gives a permission error, use root access:
+> ```bash
+> adb root
+> adb pull /data/data/kaist.iclab.galaxyppglogger/databases/RoomDB ./RoomDB
+> ```
+>
+> Alternatively, if your watch doesn't have root, you can use the **backup method**:
+> ```bash
+> adb exec-out run-as kaist.iclab.galaxyppglogger cat databases/RoomDB > RoomDB
+> ```
+
+### Step 7: Upload Data to the Session
+
+Upload the exported CSV to the server so it's stored alongside the video:
+
+```bash
+curl -X POST http://localhost:8000/api/session/S_001_baseline_1740000000000/upload/ppg \
+  -F "file=@ppg.csv"
+```
+
+### Step 8: Clean Up
+
+Flush collected data from the watch for the next session:
+- Tap **Flush** on the watch app, or
+- Reinstall the app to reset the database
+
+### Final Output
+
+After a complete session, `PPG_Dataset/` will contain:
+
+```
+PPG_Dataset/
+├── videos/
+│   └── S_001_baseline_1740000000000.mp4    # OBS video recording
+└── S_001/
+    └── baseline_1740000000000/
+        ├── metadata.json                    # Session info + timestamps
+        ├── sync_markers.csv                 # Sync points for alignment
+        └── ppg.csv                          # PPG signal data
+```
+
+**PPG CSV columns:** `id, dataReceived, timestamp, green, greenStatus, red, redStatus, ir, irStatus`
+
+| Column | Description |
+|--------|-------------|
+| `id` | Auto-incremented row ID |
+| `dataReceived` | Unix timestamp (ms) when the app received the data |
+| `timestamp` | Sensor timestamp (ms) from the Samsung Health SDK |
+| `green` | Green LED PPG value |
+| `greenStatus` | Green signal quality status |
+| `red` | Red LED PPG value |
+| `redStatus` | Red signal quality status |
+| `ir` | Infrared LED PPG value |
+| `irStatus` | IR signal quality status |
+
+---
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
