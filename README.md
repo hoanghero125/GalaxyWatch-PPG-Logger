@@ -73,7 +73,22 @@ A FastAPI server that manages recording sessions, controls OBS Studio for synchr
 ### Prerequisites
 
 - Python 3.10+
-- OBS Studio with the [obs-websocket](https://github.com/obsproject/obs-websocket) plugin enabled (built-in since OBS 28+)
+- OBS Studio (v28+)
+
+### OBS Studio Setup
+
+The server controls OBS recording via WebSocket. OBS 28+ includes the obs-websocket plugin by default — you just need to enable it.
+
+1. Install [OBS Studio](https://obsproject.com/download) if you haven't already
+2. Open OBS and go to **Tools > WebSocket Server Settings**
+3. Check **Enable WebSocket Server**
+4. Set a **Server Password** (must match the `obs.password` in `config.yaml`)
+5. Note the **Server Port** (default: `4455`)
+6. Click **OK**
+7. Set up your video source (e.g. webcam, screen capture) in OBS as you normally would
+8. **Keep OBS running** before starting the server
+
+> The server will attempt to connect to OBS on startup. If OBS is not running, the server still starts — but recording endpoints will fail until OBS is available. Check `GET /health` to verify OBS connection status.
 
 ### Setup
 
