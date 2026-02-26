@@ -1,0 +1,16 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+obs:
+  host: "localhost"
+  port: 4455
+  password: "IEC@PTIT"
+
+paths:
+  dataset_root: "../PPG_Dataset"
+  video_output: "../PPG_Dataset/videos"
+
+recording:
+  video_format: "mp4"
+  auto_process: true

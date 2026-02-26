@@ -1,0 +1,15 @@
+*.iml
+.gradle/
+local.properties
+.idea/
+.DS_Store
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+wearable/libs/
+.claude/
+__pycache__/
+*.pyc
+.env
+PPG_Dataset/
