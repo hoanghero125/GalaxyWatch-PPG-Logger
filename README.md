@@ -49,10 +49,48 @@ GalaxyWatch-PPG-Logger/
 
 ### Build & Install
 
+**Option A: From Android Studio**
+
 1. Open the project in Android Studio
 2. Ensure the Samsung Health Sensor SDK AAR is in `wearable/libs/`
 3. Connect to your Galaxy Watch via wireless debugging
 4. Run the `wearable` module
+
+**Option B: Install via APK**
+
+If you already have a built APK (or don't want to use Android Studio), you can sideload it directly.
+
+1. Build the APK (if you haven't already):
+   ```bash
+   ./gradlew :wearable:assembleDebug
+   ```
+   The APK will be at `wearable/build/outputs/apk/debug/wearable-debug.apk`
+
+2. Enable **Developer Options** on the watch:
+   - Go to **Settings > About Watch > Software** and tap **Software Version** 5 times
+
+3. Enable **ADB Debugging**:
+   - Go to **Settings > Developer Options** and turn on **ADB Debugging**
+   - For wireless: also enable **Debug over Wi-Fi** and note the IP address shown
+
+4. Connect via ADB:
+   ```bash
+   adb connect <watch-ip>:<port>
+   ```
+
+5. Install the APK:
+   ```bash
+   adb install wearable/build/outputs/apk/debug/wearable-debug.apk
+   ```
+
+### Usage
+
+1. Open **Galaxy PPG Logger** on the watch
+2. Grant all requested permissions (body sensors, activity recognition, notifications)
+3. Wait for the service to connect (spinner disappears)
+4. Tap the **Play** button to start PPG collection
+5. Tap **Pause** to stop collection
+6. Tap **Flush** to delete all collected data from local storage
 
 ---
 
