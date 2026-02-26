@@ -12,4 +12,5 @@ wearable/libs/
 __pycache__/
 *.pyc
 .env
+venv/
 PPG_Dataset/
